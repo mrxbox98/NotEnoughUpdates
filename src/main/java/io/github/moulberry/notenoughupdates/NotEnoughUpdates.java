@@ -829,6 +829,12 @@ public class NotEnoughUpdates {
             openGui = new GuiScreenElementWrapper(new NEUConfigEditor(config));
         }
     });
+	
+	SimpleCommand xboxTest = new SimpleCommand("xboxTest", new SimpleCommand.ProcessCommandRunnable() {
+        public void processCommand(ICommandSender sender, String[] args) {
+            openGui = new GuiScreenElementWrapper(new NEUConfigEditor(config));
+        }
+    });
 
     SimpleCommand settingsCommand3 = new SimpleCommand("neuconfig", new SimpleCommand.ProcessCommandRunnable() {
         public void processCommand(ICommandSender sender, String[] args) {
@@ -932,6 +938,7 @@ public class NotEnoughUpdates {
         ClientCommandHandler.instance.registerCommand(neumapCommand);
         ClientCommandHandler.instance.registerCommand(settingsCommand);
         ClientCommandHandler.instance.registerCommand(settingsCommand2);
+		ClientCommandHandler.instance.registerCommand(xboxTest);
         ClientCommandHandler.instance.registerCommand(settingsCommand3);
         ClientCommandHandler.instance.registerCommand(dungeonWinTest);
         ClientCommandHandler.instance.registerCommand(calendarCommand);
