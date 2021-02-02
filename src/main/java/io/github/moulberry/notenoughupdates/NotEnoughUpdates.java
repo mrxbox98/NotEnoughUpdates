@@ -32,6 +32,7 @@ import io.github.moulberry.notenoughupdates.util.SBInfo;
 import io.github.moulberry.notenoughupdates.util.Constants;
 import io.github.moulberry.notenoughupdates.util.Utils;
 import io.github.moulberry.notenoughupdates.util.XPInformation;
+import io.github.mrxbox98.notenoughupdatesExtra.DarkMonolith;
 import net.minecraft.block.material.MapColor;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiScreen;
@@ -52,6 +53,7 @@ import net.minecraft.world.storage.MapData;
 import net.minecraftforge.client.ClientCommandHandler;
 import net.minecraftforge.common.ForgeVersion;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.fml.client.config.GuiConfigEntries;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
 import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.Mod;
@@ -832,9 +834,12 @@ public class NotEnoughUpdates {
 	
 	SimpleCommand xboxTest = new SimpleCommand("xboxTest", new SimpleCommand.ProcessCommandRunnable() {
         public void processCommand(ICommandSender sender, String[] args) {
-            openGui = new GuiScreenElementWrapper(new NEUConfigEditor(config));
+            Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("§aTest"));
+            DarkMonolith.register();
         }
     });
+
+
 
     SimpleCommand settingsCommand3 = new SimpleCommand("neuconfig", new SimpleCommand.ProcessCommandRunnable() {
         public void processCommand(ICommandSender sender, String[] args) {
