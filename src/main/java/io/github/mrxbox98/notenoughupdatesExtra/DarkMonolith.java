@@ -2,6 +2,7 @@ package io.github.mrxbox98.notenoughupdatesExtra;
 
 import io.github.moulberry.notenoughupdates.miscfeatures.CustomItemEffects;
 import net.minecraft.block.BlockDragonEgg;
+import net.minecraft.block.BlockStone;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.player.EntityPlayer;
@@ -24,23 +25,35 @@ public class DarkMonolith {
 
     private final Minecraft mc = Minecraft.getMinecraft();
 
-    private ArrayList<BlockPos> eggs = new ArrayList<BlockPos>();
+    private static ArrayList<BlockPos> eggs = new ArrayList<BlockPos>();
 
     private BlockPos currBlock = new BlockPos(0,0,0);
 
-    public void addBlocks()
+    public static void addBlocks()
     {
         eggs.add(new BlockPos(-15,236,-92));
         eggs.add(new BlockPos(49,202,-162));
+        eggs.add(new BlockPos(56,214,-25));
+        eggs.add(new BlockPos(128,187,58));
+        eggs.add(new BlockPos(150,196,190));
+        eggs.add(new BlockPos(61,204,181));
+        eggs.add(new BlockPos(91,187,131));
+        eggs.add(new BlockPos(77,160,162));
+        eggs.add(new BlockPos(-9,162,109));
+        eggs.add(new BlockPos(1,183,25));
+        eggs.add(new BlockPos(1,170,0));
+        eggs.add(new BlockPos(-94,201,-30));
+        eggs.add(new BlockPos(-91,221,-53));
+        eggs.add(new BlockPos(-64,206,-63));
     }
 
     public BlockPos checkBlocks()
     {
         for(int i=0;i<eggs.size();i++)
         {
-            if(Minecraft.getMinecraft().theWorld.getBlockState(eggs.get(i)) instanceof BlockDragonEgg)
+            if(Minecraft.getMinecraft().theWorld.getBlockState(eggs.get(i)).getBlock() instanceof BlockDragonEgg)
             {
-                Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("§aDark Monolith at " + eggs.get(i).toString()));
+                //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("§aDark Monolith at " + eggs.get(i).toString()));
 
                 return eggs.get(i);
 
@@ -51,6 +64,7 @@ public class DarkMonolith {
 
     public static void register()
     {
+        addBlocks();
         MinecraftForge.EVENT_BUS.register(new DarkMonolith());
     }
 
