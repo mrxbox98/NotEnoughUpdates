@@ -78,7 +78,10 @@ public class DarkMonolith {
     private void drawBlock( float px, float py, float pz )
     {
         drawTracerLine(px+1D, py+1.0D, pz, px, py+1.0D, pz, 1F, 1F, 1F, 0.45F, 5F);
-
+        drawTracerLine(px+1D, py, pz, px, py, pz, 1F, 1F, 1F, 0.45F, 5F);
+        drawTracerLine(px+1D, py+1.0D, pz+1, px, py+1.0D, pz+1, 1F, 1F, 1F, 0.45F, 5F);
+        drawTracerLine(px+1D, py, pz+1, px, py, pz+1, 1F, 1F, 1F, 0.45F, 5F);
+        drawTracerLine(px+1D, py+1D, pz, px+1D, py+1D, pz+1, 1F, 1F, 1F, 0.45F, 5F);
 
     }
 
