@@ -53,7 +53,7 @@ public class DarkMonolith {
         {
             if(Minecraft.getMinecraft().theWorld.getBlockState(eggs.get(i)).getBlock() instanceof BlockDragonEgg)
             {
-                //Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("§aDark Monolith at " + eggs.get(i).toString()));
+                Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText("§aDark Monolith at " + eggs.get(i).toString()));
 
                 return eggs.get(i);
 
