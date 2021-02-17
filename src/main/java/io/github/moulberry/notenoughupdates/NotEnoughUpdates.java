@@ -839,6 +839,12 @@ public class NotEnoughUpdates {
         }
     });
 
+    SimpleCommand tracer = new SimpleCommand("tracers", new SimpleCommand.ProcessCommandRunnable() {
+        public void processCommand(ICommandSender sender, String[] args) {
+            DarkMonolith.tracers=!DarkMonolith.tracers;
+        }
+    });
+
 
 
     SimpleCommand settingsCommand3 = new SimpleCommand("neuconfig", new SimpleCommand.ProcessCommandRunnable() {
@@ -944,6 +950,7 @@ public class NotEnoughUpdates {
         ClientCommandHandler.instance.registerCommand(settingsCommand);
         ClientCommandHandler.instance.registerCommand(settingsCommand2);
 		ClientCommandHandler.instance.registerCommand(xboxTest);
+        ClientCommandHandler.instance.registerCommand(tracer);
         ClientCommandHandler.instance.registerCommand(settingsCommand3);
         ClientCommandHandler.instance.registerCommand(dungeonWinTest);
         ClientCommandHandler.instance.registerCommand(calendarCommand);

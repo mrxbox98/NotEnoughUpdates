@@ -5,6 +5,7 @@ import net.minecraft.block.BlockDragonEgg;
 import net.minecraft.block.BlockStone;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.ChatComponentText;
@@ -22,6 +23,8 @@ import org.lwjgl.opengl.GL11;
 import java.util.ArrayList;
 
 public class DarkMonolith {
+
+    public static boolean tracers;
 
     private final Minecraft mc = Minecraft.getMinecraft();
 
@@ -76,13 +79,50 @@ public class DarkMonolith {
     public void onWorldRenderLast(RenderWorldLastEvent event)
     {
         //System.out.println("XBOX CODE:" + "onWorldRenderLast(RenderWorldLastEvent event) WORKED!!");
+        if(!tracers)
+        {
+            return;
+        }
+        for(int i=0;i<Minecraft.getMinecraft().theWorld.loadedEntityList.size();i++)
+        {
+            drawTracer(Minecraft.getMinecraft().theWorld.loadedEntityList.get(i),event.partialTicks);
+        }
+        /*
         BlockPos temp = checkBlocks();
         if(temp!=null)
         {
             drawBlock(temp,event.partialTicks);
         }
+        */
 
 
+
+    }
+
+    public void drawTracer(Entity entity, float partialTicks)
+    {
+        float f = partialTicks;
+        float px = (float)mc.thePlayer.posX;
+        float py = (float)mc.thePlayer.posY;
+        float pz = (float)mc.thePlayer.posZ;
+        float mx = (float)mc.thePlayer.prevPosX;
+        float my = (float)mc.thePlayer.prevPosY;
+        float mz = (float)mc.thePlayer.prevPosZ;
+        float dx = mx + ( px - mx ) * f;
+        float dy = my + ( py - my ) * f;
+        float dz = mz + ( pz - mz ) * f;
+
+        float px2 = (float)entity.posX;
+        float py2 = (float)entity.posY;
+        float pz2 = (float)entity.posZ;
+        float mx2 = (float)entity.prevPosX;
+        float my2 = (float)entity.prevPosY;
+        float mz2 = (float)entity.prevPosZ;
+        float dx2 = mx2 + ( px2 - mx2 ) * f;
+        float dy2 = my2 + ( py2 - my2 ) * f;
+        float dz2 = mz2 + ( pz2 - mz2 ) * f;
+
+        drawTracerLine(0, 1.62, 0, dx2-dx, dy2-dy, dz2-dz, 1F, 1F, 1F, 0.45F, 5F);
     }
 
     public void drawBlock(BlockPos pos, float partialTicks)
