@@ -315,7 +315,7 @@ public class BetterContainers {
         textColour = 4210752;
     }
 
-    private static boolean isChestOpen() {
+    public static boolean isChestOpen() {
         return Minecraft.getMinecraft().currentScreen instanceof GuiChest &&
                 NotEnoughUpdates.INSTANCE.hasSkyblockScoreboard() &&
                 NotEnoughUpdates.INSTANCE.config.improvedSBMenu.enableSbMenus;
