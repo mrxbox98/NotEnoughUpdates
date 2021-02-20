@@ -33,6 +33,8 @@ import io.github.moulberry.notenoughupdates.util.SBInfo;
 import io.github.moulberry.notenoughupdates.util.Constants;
 import io.github.moulberry.notenoughupdates.util.Utils;
 import io.github.moulberry.notenoughupdates.util.XPInformation;
+import io.github.mrxbox98.notenoughupdatesExtra.DarkMonolith;
+import io.github.mrxbox98.notenoughupdatesExtra.XboxEventListener;
 import net.minecraft.block.material.MapColor;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiScreen;
@@ -774,6 +776,18 @@ public class NotEnoughUpdates {
         }
     });
 
+    SimpleCommand registerXbox = new SimpleCommand("xbox", new SimpleCommand.ProcessCommandRunnable() {
+        public void processCommand(ICommandSender sender, String[] args) {
+            registerXbox();
+        }
+    });
+
+    public static void registerXbox()
+    {
+        XboxEventListener.register();
+    }
+
+
     public Color[][] colourMap = null;
     SimpleCommand neumapCommand = new SimpleCommand("neumap", new SimpleCommand.ProcessCommandRunnable() {
         public void processCommand(ICommandSender sender, String[] args) {
@@ -994,6 +1008,7 @@ public class NotEnoughUpdates {
         if(!Loader.isModLoaded("skyblockextras")) ClientCommandHandler.instance.registerCommand(viewCataCommand);
         ClientCommandHandler.instance.registerCommand(peekCommand);
         ClientCommandHandler.instance.registerCommand(tutorialCommand);
+        ClientCommandHandler.instance.registerCommand(registerXbox);
         ClientCommandHandler.instance.registerCommand(overlayPlacementsCommand);
         ClientCommandHandler.instance.registerCommand(enchantColourCommand);
         ClientCommandHandler.instance.registerCommand(neuAhCommand);
