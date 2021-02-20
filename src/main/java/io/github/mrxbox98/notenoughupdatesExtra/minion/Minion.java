@@ -18,5 +18,6 @@ public class Minion {
         this.resourcePerDay=resourcePerHour*24;
         this.profitPerHour=profitPerHour;
         this.profitPerDay=profitPerHour*24;
+        this.name=name;
     }
 }
