@@ -10,6 +10,8 @@ public class Minion {
 
     static ArrayList<Minion> minions = new ArrayList<Minion>();
 
+    static final Minion COBBLESTONE_1=new Minion(128,)
+
     private String name;
 
     public Minion(int resourcePerHour, int profitPerHour, String name)
@@ -19,5 +21,10 @@ public class Minion {
         this.profitPerHour=profitPerHour;
         this.profitPerDay=profitPerHour*24;
         this.name=name;
+    }
+
+    public static void addMinions()
+    {
+
     }
 }
