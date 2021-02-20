@@ -1,7 +1,7 @@
 package io.github.moulberry.notenoughupdates.miscfeatures;
 
 import io.github.moulberry.notenoughupdates.NotEnoughUpdates;
-import io.github.moulberry.notenoughupdates.overlays.CommissionOverlay;
+import io.github.moulberry.notenoughupdates.overlays.MiningOverlay;
 import io.github.moulberry.notenoughupdates.util.SBInfo;
 import io.github.moulberry.notenoughupdates.util.Utils;
 import net.minecraft.client.Minecraft;
@@ -29,6 +29,8 @@ import org.lwjgl.util.vector.Vector3f;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class DwarvenMinesWaypoints {
 
@@ -88,16 +90,26 @@ public class DwarvenMinesWaypoints {
         }
     }
 
-    private long powderGhastMillis = 0;
-    private String powderGhastLocation = null;
-    private final String ghastString = "\u00A7r\u00A7eFind the \u00A7r\u00A76Powder Ghast\u00A7r\u00A7e near the \u00A7r\u00A7b";
+    private long dynamicMillis = 0;
+    private String dynamicLocation = null;
+    private String dynamicName = null;
+    private final Pattern ghastRegex = Pattern.compile("\u00A7r\u00A7eFind the \u00A7r\u00A76Powder Ghast\u00A7r\u00A7e near the \u00A7r\u00A7b(.+)!");
+    private final Pattern fallenStarRegex = Pattern.compile("\u00A7r\u00A75Fallen Star \u00A7r\u00A7ehas crashed at \u00A7r\u00A7b(.+)\u00A7r\u00A7e!");
 
     @SubscribeEvent
     public void onChat(ClientChatReceivedEvent event) {
-        if(event.message.getFormattedText().startsWith(ghastString)) {
-            String sub = event.message.getFormattedText().substring(ghastString.length());
-            powderGhastLocation = Utils.cleanColour(sub).replace("!", "").trim();
-            powderGhastMillis = System.currentTimeMillis();
+        Matcher matcherGhast = ghastRegex.matcher(event.message.getFormattedText());
+        if(matcherGhast.find()) {
+            dynamicLocation = Utils.cleanColour(matcherGhast.group(1).trim());
+            dynamicName = EnumChatFormatting.GOLD+"Powder Ghast";
+            dynamicMillis = System.currentTimeMillis();
+        } else {
+            Matcher matcherStar = fallenStarRegex.matcher(event.message.getFormattedText());
+            if(matcherStar.find()) {
+                dynamicLocation = Utils.cleanColour(matcherStar.group(1).trim());
+                dynamicName = EnumChatFormatting.DARK_PURPLE+"Fallen Star";
+                dynamicMillis = System.currentTimeMillis();
+            }
         }
     }
 
@@ -176,12 +188,11 @@ public class DwarvenMinesWaypoints {
 
         int locWaypoint = NotEnoughUpdates.INSTANCE.config.mining.locWaypoints;
 
-        if(powderGhastLocation != null &&
-                System.currentTimeMillis() - powderGhastMillis < 30*1000) {
+        if(dynamicLocation != null && dynamicName != null &&
+                System.currentTimeMillis() - dynamicMillis < 30*1000) {
             for(Map.Entry<String, Vector3f> entry : waypointsMap.entrySet()) {
-                if(entry.getKey().equals(powderGhastLocation)) {
-                    renderWayPoint(EnumChatFormatting.GOLD+"Powder Ghast",
-                            new Vector3f(entry.getValue()).translate(0, 5, 0), event.partialTicks);
+                if(entry.getKey().equals(dynamicLocation)) {
+                    renderWayPoint(dynamicName, new Vector3f(entry.getValue()).translate(0, 15, 0), event.partialTicks);
                     break;
                 }
             }
@@ -192,7 +203,7 @@ public class DwarvenMinesWaypoints {
                 if(locWaypoint >= 2) {
                     renderWayPoint(EnumChatFormatting.AQUA+entry.getKey(), entry.getValue(), event.partialTicks);
                 } else {
-                    for(String commissionName : CommissionOverlay.commissionProgress.keySet()) {
+                    for(String commissionName : MiningOverlay.commissionProgress.keySet()) {
                         if(commissionName.toLowerCase().contains(entry.getKey().toLowerCase())) {
                             if(commissionName.contains("Titanium")) {
                                 renderWayPoint(EnumChatFormatting.WHITE+entry.getKey(), entry.getValue(), event.partialTicks);
@@ -210,7 +221,7 @@ public class DwarvenMinesWaypoints {
         if(NotEnoughUpdates.INSTANCE.config.mining.emissaryWaypoints == 0) return;
 
         if(!commissionFinished) {
-            for(float f : CommissionOverlay.commissionProgress.values()) {
+            for(float f : MiningOverlay.commissionProgress.values()) {
                 if (f >= 1) {
                     commissionFinished = true;
                     break;
@@ -237,7 +248,6 @@ public class DwarvenMinesWaypoints {
         }
     }
 
-
     private void renderWayPoint(String str, Vector3f loc, float partialTicks) {
         GlStateManager.alphaFunc(516, 0.1F);
 
@@ -248,9 +258,9 @@ public class DwarvenMinesWaypoints {
         double viewerY = viewer.lastTickPosY + (viewer.posY - viewer.lastTickPosY) * partialTicks;
         double viewerZ = viewer.lastTickPosZ + (viewer.posZ - viewer.lastTickPosZ) * partialTicks;
 
-        double x = loc.x-viewerX;
+        double x = loc.x-viewerX+0.5f;
         double y = loc.y-viewerY-viewer.getEyeHeight();
-        double z = loc.z-viewerZ;
+        double z = loc.z-viewerZ+0.5f;
 
         double distSq = x*x + y*y + z*z;
         double dist = Math.sqrt(distSq);

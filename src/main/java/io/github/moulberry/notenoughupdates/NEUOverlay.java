@@ -99,7 +99,7 @@ public class NEUOverlay extends Gui {
     private InfoPane activeInfoPane = null;
 
     private TreeSet<JsonObject> searchedItems = null;
-    private JsonObject[] searchedItemsArr = null;
+    private final List<JsonObject> searchedItemsArr = new ArrayList<>();
 
     private HashMap<String, List<String>> searchedItemsSubgroup = new HashMap<>();
 
@@ -1227,25 +1227,27 @@ public class NEUOverlay extends Gui {
             this.searchedItems = searchedItems;
             this.searchedItemsSubgroup = searchedItemsSubgroup;
 
-            searchedItemsArr = null;
+            synchronized(this.searchedItemsArr) {
+                this.searchedItemsArr.clear();
+            }
+
             redrawItems = true;
         });
     }
 
     /**
      * Returns an index-able array containing the elements in searchedItems.
-     * Whenever searchedItems is updated via the above method, the array is recreated here.
+     * Whenever searchedItems is updated in updateSearch(), the array is recreated here.
      */
-    public JsonObject[] getSearchedItems() {
-        if(searchedItems==null) {
+    public List<JsonObject> getSearchedItems() {
+        if(searchedItems == null) {
             updateSearch();
+            return new ArrayList<>();
         }
-        if(searchedItemsArr==null) {
-            searchedItemsArr = new JsonObject[searchedItems.size()];
-            int i=0;
-            for(JsonObject item : searchedItems) {
-                searchedItemsArr[i] = item;
-                i++;
+
+        if(searchedItems.size() > 0 && searchedItemsArr.size() == 0) {
+            synchronized(searchedItemsArr) {
+                searchedItemsArr.addAll(searchedItems);
             }
         }
         return searchedItemsArr;
@@ -1258,8 +1260,9 @@ public class NEUOverlay extends Gui {
     public JsonObject getSearchedItemPage(int index) {
         if(index < getSlotsXSize()*getSlotsYSize()) {
             int actualIndex = index + getSlotsXSize()*getSlotsYSize()*page;
-            if(actualIndex < getSearchedItems().length) {
-                return getSearchedItems()[actualIndex];
+            List<JsonObject> searchedItems = getSearchedItems();
+            if(actualIndex < searchedItems.size()) {
+                return searchedItems.get(actualIndex);
             } else {
                 return null;
             }
@@ -1349,8 +1352,8 @@ public class NEUOverlay extends Gui {
     }
 
     public int getMaxPages() {
-        if(getSearchedItems().length == 0) return 1;
-        return (int)Math.ceil(getSearchedItems().length/(float)getSlotsYSize()/getSlotsXSize());
+        if(getSearchedItems().size() == 0) return 1;
+        return (int)Math.ceil(getSearchedItems().size()/(float)getSlotsYSize()/getSlotsXSize());
     }
 
     public int getSearchBarYSize() {
@@ -1726,7 +1729,8 @@ public class NEUOverlay extends Gui {
         //Atomic reference used so that below lambda doesn't complain about non-effectively-final variable
         AtomicReference<JsonObject> tooltipToDisplay = new AtomicReference<>(null);
         if(itemPaneOffsetFactor.getValue() < 1) {
-            BackgroundBlur.renderBlurredBackground(width, height,
+            BackgroundBlur.renderBlurredBackground(NotEnoughUpdates.INSTANCE.config.itemlist.bgBlurFactor,
+                    width, height,
                     leftSide+getBoxPadding()-5, getBoxPadding()-5,
                     paneWidth-getBoxPadding()*2+10, height-getBoxPadding()*2+10);
             Gui.drawRect(leftSide+getBoxPadding()-5, getBoxPadding()-5,

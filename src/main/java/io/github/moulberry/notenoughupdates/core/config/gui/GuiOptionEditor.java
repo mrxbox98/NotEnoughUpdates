@@ -17,12 +17,12 @@ public abstract class GuiOptionEditor {
     }
 
     public void render(int x, int y, int width) {
+        int height = getHeight();
+
         FontRenderer fr = Minecraft.getMinecraft().fontRendererObj;
-        RenderUtils.drawFloatingRectDark(x, y, width, HEIGHT, true);
+        RenderUtils.drawFloatingRectDark(x, y, width, height, true);
         TextRenderUtils.drawStringCenteredScaledMaxWidth(option.name,
                 fr, x+width/6, y+13, true, width/3-10, 0xc0c0c0);
-
-        int height = getHeight();
 
         int maxLines = 5;
         float scale = 1;
@@ -32,7 +32,7 @@ public abstract class GuiOptionEditor {
 
         float paraHeight = 9 * lineCount - 1;
 
-        while(paraHeight >= height-10) {
+        while(paraHeight >= HEIGHT-10) {
             scale -= 1/8f;
             lineCount = fr.listFormattedStringToWidth(option.desc, (int)(width*2/3/scale-10)).size();
             paraHeight = (int)(9*scale * lineCount - 1*scale);

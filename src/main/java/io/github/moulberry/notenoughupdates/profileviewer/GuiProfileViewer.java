@@ -734,7 +734,7 @@ public class GuiProfileViewer extends GuiScreen {
             int x = guiLeft+23;
             int y = guiTop+25;
 
-            renderXpBar(skillName, DEADBUSH, x, y, sectionWidth, levelFloored, level, mouseX, mouseY);
+            renderXpBar(skillName, DEADBUSH, x, y, sectionWidth, levelObjCata, mouseX, mouseY);
 
             Utils.renderAlignedString(EnumChatFormatting.YELLOW+"Until Cata "+floorLevelTo+": ",
                     EnumChatFormatting.WHITE.toString()+shortNumberFormat(floorLevelToXP, 0), x, y+16, sectionWidth);
@@ -971,20 +971,18 @@ public class GuiProfileViewer extends GuiScreen {
 
                 ProfileViewer.Level levelObj = levelObjClasses.get(skillName);
 
-                float level = levelObj.level;
-                int levelFloored = (int)Math.floor(level);
-
-                renderXpBar(colour+skillName, dungSkillsStack[i], x, y+20+29*i, sectionWidth, levelFloored, level, mouseX, mouseY);
+                renderXpBar(colour+skillName, dungSkillsStack[i], x, y+20+29*i, sectionWidth, levelObj, mouseX, mouseY);
             }
         }
     }
 
-    private void renderXpBar(String skillName, ItemStack stack, int x, int y, int xSize, int levelFloored, float level, int mouseX, int mouseY) {
+    private void renderXpBar(String skillName, ItemStack stack, int x, int y, int xSize, ProfileViewer.Level levelObj, int mouseX, int mouseY) {
+        float level = levelObj.level;
+        int levelFloored = (int)Math.floor(level);
+
         Utils.renderAlignedString(skillName, EnumChatFormatting.WHITE.toString()+levelFloored, x+14, y-4, xSize-20);
 
-        ProfileViewer.Level levelObjCata = levelObjCatas.get(profileId);
-
-        if(levelObjCata.maxed) {
+        if(levelObj.maxed) {
             renderGoldBar(x, y+6, xSize);
         } else {
             renderBar(x, y+6, xSize, level%1);
@@ -993,10 +991,10 @@ public class GuiProfileViewer extends GuiScreen {
         if(mouseX > x && mouseX < x+120) {
             if(mouseY > y-4 && mouseY < y+13) {
                 String levelStr;
-                if(levelObjCata.maxed) {
+                if(levelObj.maxed) {
                     levelStr = EnumChatFormatting.GOLD+"MAXED!";
                 } else {
-                    int maxXp = (int)levelObjCata.maxXpForLevel;
+                    int maxXp = (int)levelObj.maxXpForLevel;
                     levelStr = EnumChatFormatting.DARK_PURPLE.toString() + shortNumberFormat(Math.round((level%1)*maxXp),
                             0) + "/" + shortNumberFormat(maxXp, 0);
                 }
@@ -1013,26 +1011,28 @@ public class GuiProfileViewer extends GuiScreen {
     }
 
     public static class PetLevel {
-        float level;
-        float currentLevelRequirement;
-        float maxXP;
+        public float level;
+        public float currentLevelRequirement;
+        public float maxXP;
+        public float levelPercentage;
+        public float levelXp;
+        public float totalXp;
     }
 
     public static PetLevel getPetLevel(JsonArray levels, int offset, float exp) {
         float xpTotal = 0;
         float level = 1;
         float currentLevelRequirement = 0;
-        float remainingToNextLevel = 0;
+        float currentLevelProgress = 0;
 
         boolean addLevel = true;
 
         for(int i=offset; i<offset+99; i++) {
-
             if(addLevel) {
                 currentLevelRequirement = levels.get(i).getAsFloat();
                 xpTotal += currentLevelRequirement;
                 if(xpTotal > exp) {
-                    remainingToNextLevel = (exp-(xpTotal-currentLevelRequirement))/currentLevelRequirement;
+                    currentLevelProgress = (exp-(xpTotal-currentLevelRequirement));
                     addLevel = false;
                 } else {
                     level += 1;
@@ -1042,7 +1042,7 @@ public class GuiProfileViewer extends GuiScreen {
             }
         }
 
-        level += remainingToNextLevel;
+        level += currentLevelProgress/currentLevelRequirement;
         if(level <= 0) {
             level = 1;
         } else if(level > 100) {
@@ -1052,6 +1052,9 @@ public class GuiProfileViewer extends GuiScreen {
         levelObj.level = level;
         levelObj.currentLevelRequirement = currentLevelRequirement;
         levelObj.maxXP = xpTotal;
+        levelObj.levelPercentage = currentLevelProgress/currentLevelRequirement;
+        levelObj.levelXp = currentLevelProgress;
+        levelObj.totalXp = exp;
         return levelObj;
     }
 
@@ -1354,7 +1357,7 @@ public class GuiProfileViewer extends GuiScreen {
                     Minecraft.getMinecraft().fontRendererObj.drawString(display, -halfDisplayLen-28, 0, 0, true);
 
                     ItemStack stack = NotEnoughUpdates.INSTANCE.manager.jsonToStack(item);
-                    GlStateManager.scale(-3.5f, 3.5f, 1);
+                    GlStateManager.scale(3.5f, 3.5f, 1);
                     GlStateManager.enableDepth();
                     Utils.drawItemStack(stack, 0, 0);
                     GlStateManager.scale(-1/3.5f, 1/3.5f, 1);
@@ -2288,7 +2291,7 @@ public class GuiProfileViewer extends GuiScreen {
             if(n % 1 == 0) {
                 return Integer.toString((int)n);
             } else {
-                return Double.toString(n);
+                return String.format("%.2f", n);
             }
         }
 

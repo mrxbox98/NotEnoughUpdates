@@ -14,6 +14,8 @@ public class Position {
     @Expose
     private boolean centerY;
 
+    private static final int EDGE_OFFSET = 0;
+
     public Position(int x, int y) {
         this(x, y, false, false);
     }
@@ -25,8 +27,15 @@ public class Position {
         this.centerY = centerY;
     }
 
+    public void set(Position other) {
+        this.x = other.x;
+        this.y = other.y;
+        this.centerX = other.centerX;
+        this.centerY = other.centerY;
+    }
+
     public Position clone() {
-        return new Position(x, y);
+        return new Position(x, y, centerX, centerY);
     }
 
     public boolean isCenterX() {
@@ -45,7 +54,7 @@ public class Position {
         return y;
     }
 
-    public int getAbsX(ScaledResolution scaledResolution) {
+    public int getAbsX(ScaledResolution scaledResolution, int objWidth) {
         int width = scaledResolution.getScaledWidth();
 
         if(centerX) {
@@ -54,16 +63,16 @@ public class Position {
 
         int ret = x;
         if(x < 0) {
-            ret = width + x;
+            ret = width + x - objWidth;
         }
 
         if(ret < 0) ret = 0;
-        if(ret > width) ret = width;
+        if(ret > width - objWidth) ret = width - objWidth;
 
         return ret;
     }
 
-    public int getAbsY(ScaledResolution scaledResolution) {
+    public int getAbsY(ScaledResolution scaledResolution, int objHeight) {
         int height = scaledResolution.getScaledHeight();
 
         if(centerY) {
@@ -72,11 +81,11 @@ public class Position {
 
         int ret = y;
         if(y < 0) {
-            ret = height + y;
+            ret = height + y - objHeight;
         }
 
         if(ret < 0) ret = 0;
-        if(ret > height) ret = height;
+        if(ret > height - objHeight) ret = height - objHeight;
 
         return ret;
     }
@@ -88,44 +97,44 @@ public class Position {
 
         if(centerX) {
             if(wasPositiveX) {
-                if(this.x > screenWidth/2-objWidth) {
-                    deltaX += screenWidth/2-objWidth-this.x;
-                    this.x = screenWidth/2-objWidth;
+                if(this.x > screenWidth/2-objWidth/2) {
+                    deltaX += screenWidth/2-objWidth/2-this.x;
+                    this.x = screenWidth/2-objWidth/2;
                 }
             } else {
-                if(this.x < -screenWidth/2) {
-                    deltaX += -screenWidth/2-this.x;
-                    this.x = -screenWidth/2;
+                if(this.x < -screenWidth/2+objWidth/2) {
+                    deltaX += -screenWidth/2+objWidth/2-this.x;
+                    this.x = -screenWidth/2+objWidth/2;
                 }
             }
             return deltaX;
         }
 
         if(wasPositiveX) {
-            if(this.x < 2) {
-                deltaX += 2-this.x;
-                this.x = 2;
+            if(this.x < EDGE_OFFSET) {
+                deltaX += EDGE_OFFSET-this.x;
+                this.x = EDGE_OFFSET;
             }
-            if(this.x > screenWidth-2) {
-                deltaX += screenWidth-2-this.x;
-                this.x = screenWidth-2;
+            if(this.x > screenWidth-EDGE_OFFSET) {
+                deltaX += screenWidth-EDGE_OFFSET-this.x;
+                this.x = screenWidth-EDGE_OFFSET;
             }
         } else {
-            if(this.x+objWidth > -2) {
-                deltaX += -2-objWidth-this.x;
-                this.x = -2-objWidth;
+            if(this.x+1 > -EDGE_OFFSET) {
+                deltaX += -EDGE_OFFSET-1-this.x;
+                this.x = -EDGE_OFFSET-1;
             }
-            if(this.x+screenWidth < 2) {
-                deltaX += 2-screenWidth-this.x;
-                this.x = 2-screenWidth;
+            if(this.x+screenWidth < EDGE_OFFSET) {
+                deltaX += EDGE_OFFSET-screenWidth-this.x;
+                this.x = EDGE_OFFSET-screenWidth;
             }
         }
 
         if(this.x >= 0 && this.x+objWidth/2 > screenWidth/2) {
-            this.x -= screenWidth;
+            this.x -= screenWidth - objWidth;
         }
         if(this.x < 0 && this.x+objWidth/2 <= -screenWidth/2) {
-            this.x += screenWidth;
+            this.x += screenWidth - objWidth;
         }
         return deltaX;
     }
@@ -137,44 +146,44 @@ public class Position {
 
         if(centerY) {
             if(wasPositiveY) {
-                if(this.y > screenHeight/2-objHeight) {
-                    deltaY += screenHeight/2-objHeight-this.y;
-                    this.y = screenHeight/2-objHeight;
+                if(this.y > screenHeight/2-objHeight/2) {
+                    deltaY += screenHeight/2-objHeight/2-this.y;
+                    this.y = screenHeight/2-objHeight/2;
                 }
             } else {
-                if(this.y < -screenHeight/2) {
-                    deltaY += -screenHeight/2-this.y;
-                    this.y = -screenHeight/2;
+                if(this.y < -screenHeight/2+objHeight/2) {
+                    deltaY += -screenHeight/2+objHeight/2-this.y;
+                    this.y = -screenHeight/2+objHeight/2;
                 }
             }
             return deltaY;
         }
 
         if(wasPositiveY) {
-            if(this.y < 2) {
-                deltaY += 2-this.y;
-                this.y = 2;
+            if(this.y < EDGE_OFFSET) {
+                deltaY += EDGE_OFFSET-this.y;
+                this.y = EDGE_OFFSET;
             }
-            if(this.y > screenHeight-2) {
-                deltaY += screenHeight-2-this.y;
-                this.y = screenHeight-2;
+            if(this.y > screenHeight-EDGE_OFFSET) {
+                deltaY += screenHeight-EDGE_OFFSET-this.y;
+                this.y = screenHeight-EDGE_OFFSET;
             }
         } else {
-            if(this.y+objHeight > -2) {
-                deltaY += -2-objHeight-this.y;
-                this.y = -2-objHeight;
+            if(this.y+1 > -EDGE_OFFSET) {
+                deltaY += -EDGE_OFFSET-1-this.y;
+                this.y = -EDGE_OFFSET-1;
             }
-            if(this.y+screenHeight < 2) {
-                deltaY += 2-screenHeight-this.y;
-                this.y = 2-screenHeight;
+            if(this.y+screenHeight < EDGE_OFFSET) {
+                deltaY += EDGE_OFFSET-screenHeight-this.y;
+                this.y = EDGE_OFFSET-screenHeight;
             }
         }
 
         if(this.y >= 0 && this.y-objHeight/2 > screenHeight/2) {
-            this.y -= screenHeight;
+            this.y -= screenHeight - objHeight;
         }
         if(this.y < 0 && this.y-objHeight/2 <= -screenHeight/2) {
-            this.y += screenHeight;
+            this.y += screenHeight - objHeight;
         }
         return deltaY;
     }

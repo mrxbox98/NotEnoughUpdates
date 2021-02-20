@@ -55,15 +55,44 @@ public class NEUConfigEditor extends GuiElement {
     private LinkedHashMap<String, ConfigProcessor.ProcessedCategory> processedConfig;
 
     public NEUConfigEditor(Config config) {
+        this(config, null);
+    }
+
+    public NEUConfigEditor(Config config, String categoryOpen) {
         this.openedMillis = System.currentTimeMillis();
         this.processedConfig = ConfigProcessor.create(config);
+
+        if(categoryOpen != null) {
+            for(Map.Entry<String, ConfigProcessor.ProcessedCategory> category : processedConfig.entrySet()) {
+                if(category.getValue().name.equalsIgnoreCase(categoryOpen)) {
+                    selectedCategory = category.getKey();
+                    break;
+                }
+            }
+            if(selectedCategory == null) {
+                for(Map.Entry<String, ConfigProcessor.ProcessedCategory> category : processedConfig.entrySet()) {
+                    if(category.getValue().name.toLowerCase().startsWith(categoryOpen.toLowerCase())) {
+                        selectedCategory = category.getKey();
+                        break;
+                    }
+                }
+            }
+            if(selectedCategory == null) {
+                for(Map.Entry<String, ConfigProcessor.ProcessedCategory> category : processedConfig.entrySet()) {
+                    if(category.getValue().name.toLowerCase().contains(categoryOpen.toLowerCase())) {
+                        selectedCategory = category.getKey();
+                        break;
+                    }
+                }
+            }
+        }
     }
 
     private LinkedHashMap<String, ConfigProcessor.ProcessedCategory> getCurrentConfigEditing() {
         return processedConfig;
     }
 
-    private String getSelectedCategory() {
+    public String getSelectedCategory() {
         return selectedCategory;
     }
 
@@ -309,7 +338,7 @@ public class NEUConfigEditor extends GuiElement {
         int innerLeft = x+149+innerPadding;
         int innerRight = x+xSize-5-innerPadding;
 
-        int dWheel = Mouse.getDWheel();
+        int dWheel = Mouse.getEventDWheel();
         if(mouseY > innerTop && mouseY < innerBottom && dWheel != 0) {
             if(dWheel < 0) {
                 dWheel = -1;

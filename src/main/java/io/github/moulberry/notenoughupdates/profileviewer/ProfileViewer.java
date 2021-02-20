@@ -355,6 +355,8 @@ public class ProfileViewer {
             JsonObject inventoryInfo = getInventoryInfo(profileId);
             JsonObject profileInfo = getProfileInformation(profileId);
 
+            HashMap<String, Long> mostExpensiveInternal = new HashMap<>();
+
             long networth = 0;
             for(Map.Entry<String, JsonElement> entry : inventoryInfo.entrySet()) {
                 if(entry.getValue().isJsonArray()) {
@@ -393,7 +395,7 @@ public class ProfileViewer {
                                             if(internalname2 != null) {
                                                 if(manager.auctionManager.isVanillaItem(internalname2)) continue;
 
-                                                JsonObject bzInfo2 = manager.auctionManager.getBazaarInfo(internalname);
+                                                JsonObject bzInfo2 = manager.auctionManager.getBazaarInfo(internalname2);
 
                                                 int auctionPrice2;
                                                 if(bzInfo2 != null) {
@@ -406,6 +408,8 @@ public class ProfileViewer {
                                                 }
 
                                                 int count2 = items.getCompoundTagAt(j).getByte("Count");
+
+                                                mostExpensiveInternal.put(internalname2, auctionPrice2 * count2 + mostExpensiveInternal.getOrDefault(internalname2, 0L));
                                                 networth += auctionPrice2 * count2;
                                             }
                                         }
@@ -417,12 +421,18 @@ public class ProfileViewer {
                             if(element.getAsJsonObject().has("count")) {
                                 count = element.getAsJsonObject().get("count").getAsInt();
                             }
+                            mostExpensiveInternal.put(internalname, auctionPrice * count + mostExpensiveInternal.getOrDefault(internalname, 0L));
                             networth += auctionPrice * count;
                         }
                     }
                 }
             }
             if(networth == 0) return -1;
+
+            //System.out.println(profileId);
+            for(Map.Entry<String, Long> entry : mostExpensiveInternal.entrySet()) {
+                //System.out.println(entry.getKey() + ":" + entry.getValue());
+            }
 
             networth = (int)(networth*1.3f);
 
@@ -647,7 +657,6 @@ public class ProfileViewer {
             float totalSkillXP = experience_skill_taming + experience_skill_mining + experience_skill_foraging
                     + experience_skill_enchanting + experience_skill_carpentry + experience_skill_farming
                     + experience_skill_combat + experience_skill_fishing + experience_skill_alchemy
-                    + experience_skill_catacombs
                     + experience_skill_runecrafting;
 
             if(totalSkillXP <= 0) {
@@ -1061,6 +1070,10 @@ public class ProfileViewer {
         });
 
         return;
+    }
+
+    public Profile getProfileRaw(String uuid) {
+        return uuidToProfileMap.get(uuid);
     }
 
     public Profile getProfile(String uuid, Consumer<Profile> callback) {

@@ -478,8 +478,8 @@ public class GuiDungeonMapEditor extends GuiScreen {
                         NotEnoughUpdates.INSTANCE.config.dungeonMap.dmPosition,
                         size, size, () -> {
                             ScaledResolution scaledResolution = Utils.pushGuiScale(2);
-                            demoMap.renderMap(NotEnoughUpdates.INSTANCE.config.dungeonMap.dmPosition.getAbsX(scaledResolution)+size/2,
-                                    NotEnoughUpdates.INSTANCE.config.dungeonMap.dmPosition.getAbsY(scaledResolution)+size/2,
+                            demoMap.renderMap(NotEnoughUpdates.INSTANCE.config.dungeonMap.dmPosition.getAbsX(scaledResolution, size)+size/2,
+                                    NotEnoughUpdates.INSTANCE.config.dungeonMap.dmPosition.getAbsY(scaledResolution, size)+size/2,
                                     NotEnoughUpdates.INSTANCE.colourMap, decorations, 0,
                                 players, false, 0);
                             Utils.pushGuiScale(-1);
@@ -523,7 +523,7 @@ public class GuiDungeonMapEditor extends GuiScreen {
 
             try {
                 blurField.setCustomBorderColour(-1);
-                NotEnoughUpdates.INSTANCE.config.dungeonMap.dmBackgroundBlur = (int)Float.parseFloat(blurField.getText());
+                NotEnoughUpdates.INSTANCE.config.dungeonMap.dmBackgroundBlur = Float.parseFloat(blurField.getText());
             } catch(Exception e) {
                 blurField.setCustomBorderColour(Color.RED.getRGB());
             }

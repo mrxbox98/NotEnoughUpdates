@@ -3,22 +3,21 @@ package io.github.moulberry.notenoughupdates;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.minecraft.MinecraftProfileTexture;
 import io.github.moulberry.notenoughupdates.auction.CustomAHGui;
-import io.github.moulberry.notenoughupdates.core.config.Position;
+import io.github.moulberry.notenoughupdates.core.BackgroundBlur;
+import io.github.moulberry.notenoughupdates.core.GuiScreenElementWrapper;
+import io.github.moulberry.notenoughupdates.core.util.MiscUtils;
 import io.github.moulberry.notenoughupdates.cosmetics.CapeManager;
 import io.github.moulberry.notenoughupdates.dungeons.DungeonBlocks;
 import io.github.moulberry.notenoughupdates.dungeons.DungeonWin;
 import io.github.moulberry.notenoughupdates.gamemodes.SBGamemodes;
 import io.github.moulberry.notenoughupdates.miscfeatures.*;
 import io.github.moulberry.notenoughupdates.miscgui.*;
-import io.github.moulberry.notenoughupdates.mixins.MinecraftAccessor;
-import io.github.moulberry.notenoughupdates.overlays.CommissionOverlay;
-import io.github.moulberry.notenoughupdates.overlays.FarmingOverlay;
+import io.github.moulberry.notenoughupdates.overlays.*;
 import io.github.moulberry.notenoughupdates.profileviewer.GuiProfileViewer;
-import io.github.moulberry.notenoughupdates.overlays.TextOverlay;
-import io.github.moulberry.notenoughupdates.overlays.TextOverlayStyle;
 import io.github.moulberry.notenoughupdates.util.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
@@ -30,7 +29,6 @@ import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraft.client.gui.inventory.GuiEditSign;
 import net.minecraft.client.network.NetworkPlayerInfo;
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.texture.ITextureObject;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.event.ClickEvent;
 import net.minecraft.init.Blocks;
@@ -42,9 +40,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.nbt.NBTUtil;
-import net.minecraft.util.ChatComponentText;
-import net.minecraft.util.EnumChatFormatting;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.*;
 import net.minecraftforge.client.event.*;
 import net.minecraftforge.event.entity.player.EntityInteractEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
@@ -53,7 +49,6 @@ import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.text.WordUtils;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
@@ -64,8 +59,6 @@ import java.awt.*;
 import java.awt.datatransfer.StringSelection;
 import java.io.File;
 import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.text.NumberFormat;
 import java.util.List;
 import java.util.*;
@@ -147,19 +140,6 @@ public class NEUEventListener {
 
     private static final Pattern BAD_ITEM_REGEX = Pattern.compile("x[0-9]{1,2}$");
 
-    public static Class<? extends TextOverlay> dontRenderOverlay = null;
-    private final List<TextOverlay> textOverlays = new ArrayList<>();
-    {
-        textOverlays.add(new CommissionOverlay(NotEnoughUpdates.INSTANCE.config.mining.overlayPosition, () -> {
-            int style = NotEnoughUpdates.INSTANCE.config.mining.overlayStyle;
-            if(style >= 0 && style < TextOverlayStyle.values().length) {
-                return TextOverlayStyle.values()[style];
-            }
-            return TextOverlayStyle.BACKGROUND;
-        }));
-        textOverlays.add(new FarmingOverlay(new Position(20, 300), () -> TextOverlayStyle.BACKGROUND));
-    }
-
     /**
      * 1)Will send the cached message from #sendChatMessage when at least 200ms has passed since the last message.
      * This is used in order to prevent the mod spamming messages.
@@ -188,11 +168,14 @@ public class NEUEventListener {
                     });
                 }
             } else if(!toPreload.isEmpty()) {
-                System.out.println("Preload size:"+toPreload.size());
                 Utils.drawItemStack(toPreload.get(0), -100, -100);
                 toPreload.remove(0);
             } else {
                 itemPreloader.shutdown();
+            }
+
+            for(TextOverlay overlay : OverlayManager.textOverlays) {
+                overlay.shouldUpdateFrequent = true;
             }
         }
 
@@ -206,15 +189,31 @@ public class NEUEventListener {
             DungeonBlocks.tick();
         }
         DungeonWin.tick();
+        FlyFix.tick();
+
+
         if(longUpdate) {
+            /*for(Entity entity : Minecraft.getMinecraft().theWorld.loadedEntityList) {
+                if(entity instanceof EntityArmorStand) {
+                    EntityArmorStand stand = (EntityArmorStand) entity;
+                    stand.setInvisible(false);
+                    stand.getDataWatcher().updateObject(10, (byte)(stand.getDataWatcher().getWatchableObjectByte(10) & 0b1111111101111));
+                }
+            }*/
+
             CrystalOverlay.tick();
             DwarvenMinesTextures.tick();
             FairySouls.tick();
             MiningStuff.tick();
+            XPInformation.getInstance().tick();
             ProfileApiSyncer.getInstance().tick();
             DamageCommas.tick();
-            for(TextOverlay overlay : textOverlays) {
-                overlay.tick();
+            BackgroundBlur.markDirty();
+
+            if(neu.hasSkyblockScoreboard()) {
+                for(TextOverlay overlay : OverlayManager.textOverlays) {
+                    overlay.tick();
+                }
             }
             if(TradeWindow.hypixelTradeWindowActive()) {
                 for(int i=0; i<16; i++) {
@@ -274,6 +273,7 @@ public class NEUEventListener {
             }
 
             if(neu.hasSkyblockScoreboard()) {
+                SBInfo.getInstance().tick();
                 if(Loader.isModLoaded("morus")) {
                     MorusIntegration.getInstance().tick();
                 }
@@ -314,7 +314,6 @@ public class NEUEventListener {
                         Minecraft.getMinecraft().thePlayer.addChatMessage(new ChatComponentText(""));
                     }
                 }
-                SBInfo.getInstance().tick();
             }
             if(currentTime - lastSkyblockScoreboard < 5*60*1000) { //5 minutes
                 neu.manager.auctionManager.tick();
@@ -322,8 +321,6 @@ public class NEUEventListener {
                 neu.manager.auctionManager.markNeedsUpdate();
             }
         }
-
-
 
         /*if(longUpdate && neu.hasSkyblockScoreboard()) {
             if(neu.manager.getCurrentProfile() == null || neu.manager.getCurrentProfile().length() == 0) {
@@ -424,15 +421,15 @@ public class NEUEventListener {
     @SubscribeEvent
     public void onRenderGameOverlayPost(RenderGameOverlayEvent.Post event) {
         long timeRemaining = 15000 - (System.currentTimeMillis() - notificationDisplayMillis);
-        if(event.type == RenderGameOverlayEvent.ElementType.ALL) {
+        if(neu.hasSkyblockScoreboard() && event.type == RenderGameOverlayEvent.ElementType.ALL) {
             DungeonWin.render(event.partialTicks);
-            for(TextOverlay overlay : textOverlays) {
-                if(dontRenderOverlay != null && dontRenderOverlay.isAssignableFrom(overlay.getClass())) {
+            for(TextOverlay overlay : OverlayManager.textOverlays) {
+                if(OverlayManager.dontRenderOverlay != null && OverlayManager.dontRenderOverlay.isAssignableFrom(overlay.getClass())) {
                     continue;
                 }
                 overlay.render();
             }
-            dontRenderOverlay = null;
+            OverlayManager.dontRenderOverlay = null;
         }
         if(event.type == RenderGameOverlayEvent.ElementType.ALL &&
                 timeRemaining > 0 && notificationLines != null && notificationLines.size() > 0) {
@@ -478,6 +475,15 @@ public class NEUEventListener {
     AtomicBoolean missingRecipe = new AtomicBoolean(false);
     @SubscribeEvent
     public void onGuiOpen(GuiOpenEvent event) {
+        if((Minecraft.getMinecraft().currentScreen instanceof GuiScreenElementWrapper ||
+                Minecraft.getMinecraft().currentScreen instanceof GuiItemRecipe) &&
+                event.gui == null && !(Keyboard.getEventKeyState() && Keyboard.getEventKey() == Keyboard.KEY_ESCAPE) &&
+                System.currentTimeMillis() - NotEnoughUpdates.INSTANCE.lastOpenedGui < 500) {
+            NotEnoughUpdates.INSTANCE.lastOpenedGui = 0;
+            event.setCanceled(true);
+            return;
+        }
+
         if(!(event.gui instanceof GuiContainer) && Minecraft.getMinecraft().currentScreen != null) {
             CalendarOverlay.setEnabled(false);
         }
@@ -626,6 +632,51 @@ public class NEUEventListener {
         }
     }
 
+    private IChatComponent processChatComponent(IChatComponent chatComponent) {
+        IChatComponent newComponent;
+        if(chatComponent instanceof ChatComponentText) {
+            ChatComponentText text = (ChatComponentText) chatComponent;
+
+            newComponent = new ChatComponentText(processText(text.getUnformattedTextForChat()));
+            newComponent.setChatStyle(text.getChatStyle().createShallowCopy());
+
+            for(IChatComponent sibling : text.getSiblings()) {
+                newComponent.appendSibling(processChatComponent(sibling));
+            }
+        } else if(chatComponent instanceof ChatComponentTranslation) {
+            ChatComponentTranslation trans = (ChatComponentTranslation) chatComponent;
+
+            Object[] args = trans.getFormatArgs();
+            Object[] newArgs = new Object[args.length];
+            for(int i=0; i<trans.getFormatArgs().length; i++) {
+                if(args[i] instanceof IChatComponent) {
+                    newArgs[i] = processChatComponent((IChatComponent) args[i]);
+                } else {
+                    newArgs[i] = args[i];
+                }
+            }
+            newComponent = new ChatComponentTranslation(trans.getKey(), newArgs);
+
+            for(IChatComponent sibling : trans.getSiblings()) {
+                newComponent.appendSibling(processChatComponent(sibling));
+            }
+        } else {
+            newComponent = chatComponent.createCopy();
+        }
+
+        return newComponent;
+    }
+
+    private String processText(String text) {
+        if(SBInfo.getInstance().getLocation() == null) return text;
+        if(!SBInfo.getInstance().getLocation().startsWith("mining_")) return text;
+
+        if(Minecraft.getMinecraft().thePlayer == null) return text;
+        if(!NotEnoughUpdates.INSTANCE.config.mining.drillFuelBar) return text;
+
+        return Utils.trimIgnoreColour(text.replaceAll(EnumChatFormatting.DARK_GREEN+"\\S+ Drill Fuel", ""));
+    }
+
     /**
      * 1) When receiving "You are playing on profile" messages, will set the current profile.
      * 2) When a /viewrecipe command fails (i.e. player does not have recipe unlocked, will open the custom recipe GUI)
@@ -633,6 +684,11 @@ public class NEUEventListener {
      */
     @SubscribeEvent(priority = EventPriority.LOW)
     public void onGuiChat(ClientChatReceivedEvent e) {
+        if(e.type == 2) {
+            e.message = processChatComponent(e.message);
+            return;
+        }
+
         DungeonWin.onChatMessage(e);
 
         String r = null;
@@ -745,6 +801,17 @@ public class NEUEventListener {
 
     @SubscribeEvent
     public void onGuiScreenDrawPre(GuiScreenEvent.DrawScreenEvent.Pre event) {
+        if(AuctionSearchOverlay.shouldReplace()) {
+            AuctionSearchOverlay.render();
+            event.setCanceled(true);
+            return;
+        }
+        if(RancherBootOverlay.shouldReplace()) {
+            RancherBootOverlay.render();
+            event.setCanceled(true);
+            return;
+        }
+
         if(TradeWindow.tradeWindowActive() ||
                 event.gui instanceof CustomAHGui || neu.manager.auctionManager.customAH.isRenderOverAuctionView()) {
             event.setCanceled(true);
@@ -1021,6 +1088,16 @@ public class NEUEventListener {
         if(!event.isCanceled()) {
             Utils.scrollTooltip(Mouse.getEventDWheel());
         }
+        if(AuctionSearchOverlay.shouldReplace()) {
+            AuctionSearchOverlay.mouseEvent();
+            event.setCanceled(true);
+            return;
+        }
+        if(RancherBootOverlay.shouldReplace()) {
+            RancherBootOverlay.mouseEvent();
+            event.setCanceled(true);
+            return;
+        }
         if(TradeWindow.tradeWindowActive() || event.gui instanceof CustomAHGui ||
                 neu.manager.auctionManager.customAH.isRenderOverAuctionView()) {
             event.setCanceled(true);
@@ -1056,6 +1133,17 @@ public class NEUEventListener {
      */
     @SubscribeEvent
     public void onGuiScreenKeyboard(GuiScreenEvent.KeyboardInputEvent.Pre event) {
+        if(AuctionSearchOverlay.shouldReplace()) {
+            AuctionSearchOverlay.keyEvent();
+            event.setCanceled(true);
+            return;
+        }
+        if(RancherBootOverlay.shouldReplace()) {
+            RancherBootOverlay.keyEvent();
+            event.setCanceled(true);
+            return;
+        }
+
         if(TradeWindow.tradeWindowActive() || event.gui instanceof CustomAHGui ||
                 neu.manager.auctionManager.customAH.isRenderOverAuctionView()) {
             if(event.gui instanceof CustomAHGui ||
@@ -1210,6 +1298,32 @@ public class NEUEventListener {
             EnumChatFormatting.RED+EnumChatFormatting.BOLD.toString()+"VERY SPECIAL",
             EnumChatFormatting.DARK_RED+EnumChatFormatting.BOLD.toString()+"SUPREME",
     };
+    private static final HashMap<String, String> rarityArrMap = new HashMap<>();
+    static {
+        rarityArrMap.put("COMMON", rarityArrC[0]);
+        rarityArrMap.put("UNCOMMON", rarityArrC[1]);
+        rarityArrMap.put("RARE", rarityArrC[2]);
+        rarityArrMap.put("EPIC", rarityArrC[3]);
+        rarityArrMap.put("LEGENDARY", rarityArrC[4]);
+        rarityArrMap.put("MYTHIC", rarityArrC[5]);
+    }
+
+    private HashSet<String> percentStats = new HashSet<>();
+    {
+        percentStats.add("bonus_attack_speed");
+        percentStats.add("crit_damage");
+        percentStats.add("crit_chance");
+        percentStats.add("sea_creature_chance");
+        percentStats.add("ability_damage");
+    }
+
+    private String currentRarity = "COMMON";
+    private boolean showReforgeStoneStats = true;
+    private boolean pressedArrowLast = false;
+    private boolean pressedShiftLast = false;
+
+    private boolean copied = false;
+
     @SubscribeEvent(priority = EventPriority.LOW)
     public void onItemTooltipLow(ItemTooltipEvent event) {
         if(!NotEnoughUpdates.INSTANCE.isOnSkyblock()) return;
@@ -1274,7 +1388,145 @@ public class NEUEventListener {
         int index = 0;
         List<String> newTooltip = new ArrayList<>();
         for(String line : event.toolTip) {
-            if(line.contains("\u00A7cR\u00A76a\u00A7ei\u00A7an\u00A7bb\u00A79o\u00A7dw\u00A79 Rune")) {
+            if(line.endsWith(EnumChatFormatting.DARK_GRAY+"Reforge Stone")) {
+                JsonObject reforgeStones = Constants.REFORGESTONES;
+
+                if(reforgeStones != null && reforgeStones.has(internalname)) {
+                    boolean shift = Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) || Keyboard.isKeyDown(Keyboard.KEY_RSHIFT);
+                    if(!pressedShiftLast && shift) {
+                        showReforgeStoneStats = !showReforgeStoneStats;
+                    }
+                    pressedShiftLast = shift;
+
+                    newTooltip.add(line);
+                    newTooltip.add("");
+                    if(!showReforgeStoneStats) {
+                        newTooltip.add(EnumChatFormatting.DARK_GRAY+"[Press SHIFT to show extra info]");
+                    } else {
+                        newTooltip.add(EnumChatFormatting.DARK_GRAY+"[Press SHIFT to hide extra info]");
+                    }
+
+                    JsonObject reforgeInfo = reforgeStones.get(internalname).getAsJsonObject();
+                    JsonArray requiredRaritiesArray = reforgeInfo.get("requiredRarities").getAsJsonArray();
+
+                    if(showReforgeStoneStats && requiredRaritiesArray.size() > 0) {
+                        String reforgeName = Utils.getElementAsString(reforgeInfo.get("reforgeName"), "");
+
+                        String[] requiredRarities = new String[requiredRaritiesArray.size()];
+                        for(int i=0; i<requiredRaritiesArray.size(); i++) {
+                            requiredRarities[i] = requiredRaritiesArray.get(i).getAsString();
+                        }
+
+                        int rarityIndex = requiredRarities.length-1;
+                        String rarity = requiredRarities[rarityIndex];
+                        for(int i=0; i<requiredRarities.length; i++) {
+                            String rar = requiredRarities[i];
+                            if(rar.equalsIgnoreCase(currentRarity)) {
+                                rarity = rar;
+                                rarityIndex = i;
+                                break;
+                            }
+                        }
+
+                        boolean left = Keyboard.isKeyDown(Keyboard.KEY_LEFT);
+                        boolean right = Keyboard.isKeyDown(Keyboard.KEY_RIGHT);
+                        if(!pressedArrowLast && (left || right)) {
+                            if(left) {
+                                rarityIndex--;
+                            } else if(right) {
+                                rarityIndex++;
+                            }
+                            if(rarityIndex < 0) rarityIndex = 0;
+                            if(rarityIndex >= requiredRarities.length) rarityIndex = requiredRarities.length-1;
+                            currentRarity = requiredRarities[rarityIndex];
+                            rarity = currentRarity;
+                        }
+                        pressedArrowLast = left || right;
+
+                        JsonElement statsE = reforgeInfo.get("reforgeStats");
+                        if(statsE != null && statsE.isJsonObject()) {
+                            JsonObject stats = statsE.getAsJsonObject();
+
+                            String rarityFormatted = rarityArrMap.getOrDefault(rarity, rarity);
+
+                            JsonElement reforgeAbilityE = reforgeInfo.get("reforgeAbility");
+                            String reforgeAbility = null;
+                            if(reforgeAbilityE != null) {
+                                if(reforgeAbilityE.isJsonPrimitive() && reforgeAbilityE.getAsJsonPrimitive().isString()) {
+                                    reforgeAbility = Utils.getElementAsString(reforgeInfo.get("reforgeAbility"), "");
+
+                                } else if(reforgeAbilityE.isJsonObject()) {
+                                    if(reforgeAbilityE.getAsJsonObject().has(rarity)) {
+                                        reforgeAbility = reforgeAbilityE.getAsJsonObject().get(rarity).getAsString();
+                                    }
+                                }
+                            }
+
+                            if(reforgeAbility != null && !reforgeAbility.isEmpty()) {
+                                String text = EnumChatFormatting.BLUE + (reforgeName.isEmpty() ? "Bonus: " : reforgeName + " Bonus: ") +
+                                        EnumChatFormatting.GRAY+reforgeAbility;
+                                boolean first = true;
+                                for(String s : Minecraft.getMinecraft().fontRendererObj.listFormattedStringToWidth(text, 150)) {
+                                    newTooltip.add((first ? "" : "  ") + s);
+                                    first = false;
+                                }
+                                newTooltip.add("");
+                            }
+
+                            newTooltip.add(EnumChatFormatting.BLUE+"Stats for "+rarityFormatted+"\u00a79: [\u00a7l\u00a7m< \u00a79Switch\u00a7l\u27a1\u00a79]");
+
+                            JsonElement statsRarE = stats.get(rarity);
+                            if(statsRarE != null && statsRarE.isJsonObject()) {
+                                JsonObject statsRar = statsRarE.getAsJsonObject();
+
+                                TreeSet<Map.Entry<String, JsonElement>> sorted = new TreeSet<>(Map.Entry.comparingByKey());
+                                sorted.addAll(statsRar.entrySet());
+
+                                for(Map.Entry<String, JsonElement> entry : sorted) {
+                                    if(entry.getValue().isJsonPrimitive() && ((JsonPrimitive)entry.getValue()).isNumber()) {
+                                        float statNumF = entry.getValue().getAsFloat();
+                                        String statNumS;
+                                        if(statNumF % 1 == 0) {
+                                            statNumS = String.valueOf(Math.round(statNumF));
+                                        } else {
+                                            statNumS = Utils.floatToString(statNumF, 1);
+                                        }
+                                        String reforgeNamePretty = WordUtils.capitalizeFully(entry.getKey().replace("_", " "));
+                                        String text = EnumChatFormatting.GRAY + reforgeNamePretty + ": " + EnumChatFormatting.GREEN+"+"+statNumS;
+                                        if(percentStats.contains(entry.getKey())) {
+                                            text += "%";
+                                        }
+                                        newTooltip.add("  "+text);
+                                    }
+                                }
+                            }
+
+                            JsonElement reforgeCostsE = reforgeInfo.get("reforgeCosts");
+                            int reforgeCost = -1;
+                            if(reforgeCostsE != null) {
+                                if(reforgeCostsE.isJsonPrimitive() && reforgeCostsE.getAsJsonPrimitive().isNumber()) {
+                                    reforgeCost = (int)Utils.getElementAsFloat(reforgeInfo.get("reforgeAbility"), -1);
+
+                                } else if(reforgeCostsE.isJsonObject()) {
+                                    if(reforgeCostsE.getAsJsonObject().has(rarity)) {
+                                        reforgeCost = (int)Utils.getElementAsFloat(reforgeCostsE.getAsJsonObject().get(rarity), -1);
+                                    }
+                                }
+                            }
+
+                            if(reforgeCost >= 0) {
+                                String text = EnumChatFormatting.BLUE + "Apply Cost: " + EnumChatFormatting.GOLD+NumberFormat.getNumberInstance().format(reforgeCost) +" coins";
+                                newTooltip.add("");
+                                newTooltip.add(text);
+                            }
+
+                        }
+                    }
+
+                    continue;
+                }
+
+            } else if(line.contains("\u00A7cR\u00A76a\u00A7ei\u00A7an\u00A7bb\u00A79o\u00A7dw\u00A79 Rune")) {
                 line = line.replace("\u00A7cR\u00A76a\u00A7ei\u00A7an\u00A7bb\u00A79o\u00A7dw\u00A79 Rune",
                         Utils.chromaString("Rainbow Rune", index, false)+EnumChatFormatting.BLUE);
             } else if(hasEnchantments) {
@@ -1327,6 +1579,9 @@ public class NEUEventListener {
                     String comparator = GuiEnchantColour.getColourOpIndex(colourOps, 1);
                     String comparison = GuiEnchantColour.getColourOpIndex(colourOps, 2);
                     String colourCode = GuiEnchantColour.getColourOpIndex(colourOps, 3);
+                    String modifier = GuiEnchantColour.getColourOpIndex(colourOps, 4);
+
+                    int modifierI = GuiEnchantColour.getIntModifier(modifier);
 
                     if(enchantName.length() == 0) continue;
                     if(comparator.length() == 0) continue;
@@ -1417,18 +1672,40 @@ public class NEUEventListener {
                             }
                         }
                         if(matches) {
+                            String enchantText = matcher.group(2);
+                            StringBuilder extraModifiersBuilder = new StringBuilder();
+
+                            if((modifierI & GuiEnchantColour.BOLD_MODIFIER) != 0) {
+                                extraModifiersBuilder.append(EnumChatFormatting.BOLD);
+                            }
+                            if((modifierI & GuiEnchantColour.ITALIC_MODIFIER) != 0) {
+                                extraModifiersBuilder.append(EnumChatFormatting.ITALIC);
+                            }
+                            if((modifierI & GuiEnchantColour.UNDERLINE_MODIFIER) != 0) {
+                                extraModifiersBuilder.append(EnumChatFormatting.UNDERLINE);
+                            }
+                            if((modifierI & GuiEnchantColour.OBFUSCATED_MODIFIER) != 0) {
+                                extraModifiersBuilder.append(EnumChatFormatting.OBFUSCATED);
+                            }
+                            if((modifierI & GuiEnchantColour.STRIKETHROUGH_MODIFIER) != 0) {
+                                extraModifiersBuilder.append(EnumChatFormatting.STRIKETHROUGH);
+                            }
+
+                            String extraMods = extraModifiersBuilder.toString();
+
                             if(!colourCode.equals("z")) {
-                                line = line.replace("\u00A79"+matcher.group(2), "\u00A7"+colourCode+matcher.group(2));
-                                line = line.replace("\u00A79\u00A7d\u00A7l"+matcher.group(2), "\u00A7"+colourCode+
-                                        EnumChatFormatting.BOLD+matcher.group(2));
+                                line = line.replace("\u00A79"+enchantText,
+                                        "\u00A7"+colourCode+extraMods+enchantText);
+                                line = line.replace("\u00A79\u00A7d\u00A7l"+enchantText,
+                                        "\u00A7"+colourCode+extraMods+enchantText);
                             } else {
                                 int offset = Minecraft.getMinecraft().fontRendererObj.getStringWidth(line.replaceAll(
-                                        "\\u00A79"+matcher.group(2)+".*", ""));
-                                line = line.replace("\u00A79"+matcher.group(2), Utils.chromaString(matcher.group(2), offset/12f+index, false));
+                                        "\\u00A79"+enchantText+".*", ""));
+                                line = line.replace("\u00A79"+enchantText, Utils.chromaString(enchantText, offset/12f+index, false));
 
                                 offset = Minecraft.getMinecraft().fontRendererObj.getStringWidth(line.replaceAll(
-                                        "\\u00A79\\u00A7d\\u00A7l"+matcher.group(2)+".*", ""));
-                                line = line.replace("\u00A79\u00A7d\u00A7l"+matcher.group(2), Utils.chromaString(matcher.group(2),
+                                        "\\u00A79\\u00A7d\\u00A7l"+enchantText+".*", ""));
+                                line = line.replace("\u00A79\u00A7d\u00A7l"+enchantText, Utils.chromaString(enchantText,
                                         offset/12f+index, true));
                             }
                         }
@@ -1603,6 +1880,9 @@ public class NEUEventListener {
             index++;
         }
 
+        pressedShiftLast = Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) || Keyboard.isKeyDown(Keyboard.KEY_RSHIFT);
+        pressedArrowLast = Keyboard.isKeyDown(Keyboard.KEY_LEFT) || Keyboard.isKeyDown(Keyboard.KEY_RIGHT);
+
         event.toolTip.clear();
         event.toolTip.addAll(newTooltip);
 
@@ -1675,8 +1955,8 @@ public class NEUEventListener {
                 }
             }
         }*/
-        if(!Keyboard.isKeyDown(Keyboard.KEY_LCONTROL) || !neu.config.hidden.dev) return;
-        if(event.toolTip.size()>0&&event.toolTip.get(event.toolTip.size()-1).startsWith(EnumChatFormatting.DARK_GRAY + "NBT: ")) {
+        if(Keyboard.isKeyDown(Keyboard.KEY_LCONTROL) && neu.config.hidden.dev &&
+                event.toolTip.size()>0&&event.toolTip.get(event.toolTip.size()-1).startsWith(EnumChatFormatting.DARK_GRAY + "NBT: ")) {
             event.toolTip.remove(event.toolTip.size()-1);
 
             StringBuilder sb = new StringBuilder();
@@ -1705,8 +1985,60 @@ public class NEUEventListener {
             }
             event.toolTip.add(sb.toString());
             if(Keyboard.isKeyDown(Keyboard.KEY_H)) {
-                StringSelection selection = new StringSelection(sb.toString());
-                Toolkit.getDefaultToolkit().getSystemClipboard().setContents(selection, selection);
+                if(!copied) {
+                    copied = true;
+                    StringSelection selection = new StringSelection(sb.toString());
+                    Toolkit.getDefaultToolkit().getSystemClipboard().setContents(selection, selection);
+                }
+            } else {
+                copied = false;
+            }
+        } else if(NotEnoughUpdates.INSTANCE.packDevEnabled) {
+            event.toolTip.add("");
+            event.toolTip.add(EnumChatFormatting.AQUA+"NEU Pack Dev Info:");
+            event.toolTip.add("Press "+EnumChatFormatting.GOLD+"[KEY]"+EnumChatFormatting.GRAY+" to copy line");
+
+            String internal = NotEnoughUpdates.INSTANCE.manager.getInternalNameForItem(event.itemStack);
+
+            boolean k = Keyboard.isKeyDown(Keyboard.KEY_K);
+            boolean m = Keyboard.isKeyDown(Keyboard.KEY_M);
+            boolean n = Keyboard.isKeyDown(Keyboard.KEY_N);
+
+            event.toolTip.add(EnumChatFormatting.AQUA+"Internal Name: "+EnumChatFormatting.GRAY+internal+EnumChatFormatting.GOLD+" [K]");
+            if(!copied && k) {
+                MiscUtils.copyToClipboard(internal);
+            }
+
+            if(event.itemStack.getTagCompound() != null) {
+                NBTTagCompound tag = event.itemStack.getTagCompound();
+
+                if (tag.hasKey("SkullOwner", 10)) {
+                    GameProfile gameprofile = NBTUtil.readGameProfileFromNBT(tag.getCompoundTag("SkullOwner"));
+
+                    if(gameprofile != null) {
+                        event.toolTip.add(EnumChatFormatting.AQUA+"Skull UUID: "+EnumChatFormatting.GRAY+gameprofile.getId()+EnumChatFormatting.GOLD+" [M]");
+                        if(!copied && m) {
+                            MiscUtils.copyToClipboard(gameprofile.getId().toString());
+                        }
+
+                        Map<MinecraftProfileTexture.Type, MinecraftProfileTexture> map = Minecraft.getMinecraft().getSkinManager().loadSkinFromCache(gameprofile);
+
+                        if (map.containsKey(MinecraftProfileTexture.Type.SKIN)) {
+                            MinecraftProfileTexture profTex = map.get(MinecraftProfileTexture.Type.SKIN);
+                            event.toolTip.add(EnumChatFormatting.AQUA+"Skull Texture Link: "+EnumChatFormatting.GRAY+profTex.getUrl()+EnumChatFormatting.GOLD+" [N]");
+
+                            if(!copied && n) {
+                                MiscUtils.copyToClipboard(profTex.getUrl());
+                            }
+                        }
+                    }
+                }
+            }
+
+            if(k || m || n) {
+                copied = true;
+            } else {
+                copied = false;
             }
         }
     }

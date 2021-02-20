@@ -24,6 +24,8 @@
     "MixinLayerCreeperCharge",
     "MixinEffectRenderer",
     "MixinRendererLivingEntity",
-    "MinecraftAccessor"
+    "GuiEditSignAccessor",
+    "MixinGuiScreen",
+    "MixinTileEntitySkullRenderer"
   ]
 }

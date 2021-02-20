@@ -366,7 +366,7 @@ public class DungeonMap {
 
     private HashMap<Integer, Float> borderRadiusCache = new HashMap<>();
     public float getBorderRadius() {
-        int borderSizeOption = NotEnoughUpdates.INSTANCE.config.dungeonMap.dmBorderSize;
+        int borderSizeOption = Math.round(NotEnoughUpdates.INSTANCE.config.dungeonMap.dmBorderSize);
         String sizeId = borderSizeOption == 0 ? "small" : borderSizeOption == 2 ? "large" : "medium";
 
         int style = NotEnoughUpdates.INSTANCE.config.dungeonMap.dmBorderStyle;
@@ -414,7 +414,7 @@ public class DungeonMap {
             maxRoomY = Math.max(offset.y, maxRoomY);
         }
 
-        int borderSizeOption = NotEnoughUpdates.INSTANCE.config.dungeonMap.dmBorderSize;
+        int borderSizeOption = Math.round(NotEnoughUpdates.INSTANCE.config.dungeonMap.dmBorderSize);
 
         int renderRoomSize = getRenderRoomSize();
         int renderConnSize = getRenderConnSize();
@@ -434,7 +434,7 @@ public class DungeonMap {
         int mapSizeX;
         int mapSizeY;
         if(NotEnoughUpdates.INSTANCE.config.dungeonMap.dmBorderStyle <= 1) {
-            mapSizeX = 80 + (int)Math.round(40*NotEnoughUpdates.INSTANCE.config.dungeonMap.dmBorderSize);
+            mapSizeX = 80 + Math.round(40*NotEnoughUpdates.INSTANCE.config.dungeonMap.dmBorderSize);
         } else {
             mapSizeX = borderSizeOption == 0 ? 90 : borderSizeOption == 1 ? 120 : borderSizeOption == 2 ? 160 : 240;
         }
@@ -500,8 +500,10 @@ public class DungeonMap {
 
                 if(NotEnoughUpdates.INSTANCE.config.dungeonMap.dmBackgroundBlur > 0.1) {
                     GlStateManager.translate(-centerX+mapSizeX/2, -centerY+mapSizeY/2, 0);
-                    BackgroundBlur.renderBlurredBackground(scaledResolution.getScaledWidth(), scaledResolution.getScaledHeight(),
+                    BackgroundBlur.renderBlurredBackground(NotEnoughUpdates.INSTANCE.config.dungeonMap.dmBackgroundBlur,
+                            scaledResolution.getScaledWidth(), scaledResolution.getScaledHeight(),
                             centerX-mapSizeX/2, centerY-mapSizeY/2, mapSizeX, mapSizeY);
+                    BackgroundBlur.markDirty();
                     GlStateManager.translate(centerX-mapSizeX/2, centerY-mapSizeY/2, 0);
                 }
 
@@ -653,7 +655,9 @@ public class DungeonMap {
                         pixelWidth = pixelHeight = 12;
                     }
                     GlStateManager.color(1, 1, 1, 1);
-                    if(NotEnoughUpdates.INSTANCE.config.dungeonMap.dmPlayerHeads >= 1 &&
+                    if((!NotEnoughUpdates.INSTANCE.config.dungeonMapOpen.showOwnHeadAsMarker ||
+                            playerMarkerMapPositions.size() <= 1 || minU != 1/4f) &&
+                            NotEnoughUpdates.INSTANCE.config.dungeonMap.dmPlayerHeads >= 1 &&
                             playerSkinMap.containsKey(entry.getKey())) {
                         Minecraft.getMinecraft().getTextureManager().bindTexture(playerSkinMap.get(entry.getKey()));
 
@@ -1031,9 +1035,9 @@ public class DungeonMap {
                 Score score = scores.get(i);
                 ScorePlayerTeam scoreplayerteam1 = scoreboard.getPlayersTeam(score.getPlayerName());
                 String line = ScorePlayerTeam.formatPlayerName(scoreplayerteam1, score.getPlayerName());
-                line = Utils.cleanDuplicateColourCodes(line);
+                line = Utils.cleanColour(line);
 
-                if(line.contains("(F1)")) {
+                if(line.contains("(F1)") || line.contains("(E)")) {
                     isFloorOne = true;
                     break;
                 }
@@ -1145,6 +1149,7 @@ public class DungeonMap {
                 }
             }
         }
+        actualPlayers.add(Minecraft.getMinecraft().thePlayer.getName());
 
         playerEntityMapPositions.clear();
         if(usePlayerPositions) {
@@ -1378,6 +1383,7 @@ public class DungeonMap {
 
     @SubscribeEvent
     public void onRenderOverlay(RenderGameOverlayEvent.Post event) {
+        if(!NotEnoughUpdates.INSTANCE.hasSkyblockScoreboard()) return;
         if(event.type == RenderGameOverlayEvent.ElementType.ALL) {
             if(!NotEnoughUpdates.INSTANCE.config.dungeonMap.dmEnable) return;
 
@@ -1494,7 +1500,7 @@ public class DungeonMap {
 
                 int size = 80 + Math.round(40*NotEnoughUpdates.INSTANCE.config.dungeonMap.dmBorderSize);
                 ScaledResolution scaledResolution = Utils.pushGuiScale(2);
-                renderMap(pos.getAbsX(scaledResolution)+size/2, pos.getAbsY(scaledResolution)+size/2,
+                renderMap(pos.getAbsX(scaledResolution, size/2)+size/2, pos.getAbsY(scaledResolution, size/2)+size/2,
                         colourMap, decorations, roomSizeBlocks, actualPlayers, true, event.partialTicks);
                 Utils.pushGuiScale(-1);
             }

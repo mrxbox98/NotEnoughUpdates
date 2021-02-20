@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import io.github.moulberry.notenoughupdates.core.util.StringUtils;
 import io.github.moulberry.notenoughupdates.profileviewer.ProfileViewer;
 import net.minecraftforge.client.event.ClientChatReceivedEvent;
+import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 import java.util.HashMap;
@@ -31,13 +32,17 @@ public class XPInformation {
     private HashMap<String, SkillInfo> skillInfoMap = new HashMap<>();
 
     private static Splitter SPACE_SPLITTER = Splitter.on("  ").omitEmptyStrings().trimResults();
-    private static Pattern SKILL_PATTERN = Pattern.compile("\\+(\\d+(?:\\.\\d+)?) (.+) \\((\\d+(?:,\\d+)*(?:\\.\\d+)?)/(\\d+(?:,\\d+)*(?:\\.\\d+)?)\\)");
+    private static Pattern SKILL_PATTERN = Pattern.compile("\\+(\\d+(?:,\\d+)*(?:\\.\\d+)?) (.+) \\((\\d+(?:,\\d+)*(?:\\.\\d+)?)/(\\d+(?:,\\d+)*(?:\\.\\d+)?)\\)");
 
-    public SkillInfo getSkillInfo(String skillName) {
-        return skillInfoMap.get(skillName);
+    public HashMap<String, SkillInfo> getSkillInfoMap() {
+        return skillInfoMap;
     }
 
-    @SubscribeEvent
+    public SkillInfo getSkillInfo(String skillName) {
+        return skillInfoMap.get(skillName.toLowerCase());
+    }
+
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
     public void onChatReceived(ClientChatReceivedEvent event) {
         if(event.type == 2) {
             JsonObject leveling = Constants.LEVELING;
@@ -71,7 +76,7 @@ public class XPInformation {
                         skillInfo.level++;
                     }
 
-                    skillInfoMap.put(skillS, skillInfo);
+                    skillInfoMap.put(skillS.toLowerCase(), skillInfo);
                 }
             }
         }
@@ -82,9 +87,23 @@ public class XPInformation {
                 () -> {}, this::onApiUpdated);
     }
 
+    private static final String[] skills = {"taming","mining","foraging","enchanting","carpentry","farming","combat","fishing","alchemy","runecrafting"};
+
     private void onApiUpdated(ProfileViewer.Profile profile) {
         JsonObject skillInfo = profile.getSkillInfo(null);
 
+        for(String skill : skills) {
+            SkillInfo info = new SkillInfo();
+
+            float level = skillInfo.get("level_skill_"+skill).getAsFloat();
+
+            info.totalXp = skillInfo.get("experience_skill_"+skill).getAsFloat();
+            info.currentXpMax = skillInfo.get("maxxp_skill_"+skill).getAsFloat();
+            info.level = (int)level;
+            info.currentXp = (level%1)*info.currentXpMax;
+
+            skillInfoMap.put(skill.toLowerCase(), info);
+        }
     }
 
 }
