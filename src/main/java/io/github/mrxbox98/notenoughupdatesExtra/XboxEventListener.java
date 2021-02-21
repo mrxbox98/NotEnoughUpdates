@@ -1,5 +1,7 @@
 package io.github.mrxbox98.notenoughupdatesExtra;
 
+import io.github.mrxbox98.notenoughupdatesExtra.minion.Minion;
+import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.inventory.GuiChest;
 import net.minecraft.client.gui.inventory.GuiContainer;
 import net.minecraftforge.client.event.GuiOpenEvent;
@@ -27,6 +29,12 @@ public class XboxEventListener {
      */
     @SubscribeEvent
     public void onGuiBackgroundDraw(GuiScreenEvent.BackgroundDrawnEvent event)
+    {
+        Minion.onGuiBackgroundDraw(event);
+    }
+
+    @SubscribeEvent
+    public void onDrawScreen(GuiScreenEvent.DrawScreenEvent event)
     {
 
     }

@@ -1,5 +1,6 @@
 package io.github.mrxbox98.notenoughupdatesExtra;
 
+import io.github.mrxbox98.notenoughupdatesExtra.minion.Minion;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.inventory.GuiChest;
 import net.minecraft.inventory.Container;
@@ -42,6 +43,10 @@ public class MinionUtils {
         return "";
     }
 
+    /**
+     * Checks a container what minion it is
+     * @return the minion type or "" if there is no minion
+     */
     public static String checkMinion()
     {
         if(!(mc.currentScreen instanceof GuiChest))
@@ -54,20 +59,18 @@ public class MinionUtils {
 
         IInventory inventory = ((ContainerChest)container).getLowerChestInventory();
 
-        System.out.println(inventory.getSizeInventory());
+        //System.out.println(inventory.getSizeInventory());
 
 
-        for(int i=0;i<inventory.getSizeInventory();i++)
+        if(inventory.getStackInSlot(5)!=null)
         {
-            if(inventory.getStackInSlot(i)!=null)
-            {
+            String name=inventory.getStackInSlot(5).getDisplayName();
 
-                System.out.println(inventory.getStackInSlot(i).getDisplayName());
-            }
-
-
+            Minion.currentMinion=name;
+            return name;
         }
         waitingTicks=false;
+        Minion.currentMinion="";
         return "";
     }
 
