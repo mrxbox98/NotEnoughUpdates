@@ -107,6 +107,15 @@ public class Minion {
         return findMinion(name).getResourcePerHour();
     }
 
+    public static int getProfitGenerated(String name)
+    {
+        if(findMinion(name) == null)
+        {
+            return 0;
+        }
+        return findMinion(name).getProfitPerHour();
+    }
+
     public static void onGuiBackgroundDraw(GuiScreenEvent.BackgroundDrawnEvent event)
     {
         if(!(event.gui instanceof GuiContainer) || currentMinion.length()==0)
@@ -114,7 +123,8 @@ public class Minion {
             return;
         }
 
-        RenderUtils.drawFloatingRect(410,85,100,100);
-        TextRenderUtils.drawStringCentered(new String(String.valueOf(getResourceGenerated(currentMinion))),mc.fontRendererObj,460,135,false,150);
+        RenderUtils.drawFloatingRect(410,85,200,100);
+        TextRenderUtils.drawStringCentered("Resources Generated: " + String.valueOf(getResourceGenerated(currentMinion)),mc.fontRendererObj,500,135,false,150);
+        TextRenderUtils.drawStringCentered("Profit Generated: " + String.valueOf(getProfitGenerated(currentMinion)),mc.fontRendererObj,500,145,false,150);
     }
 }
