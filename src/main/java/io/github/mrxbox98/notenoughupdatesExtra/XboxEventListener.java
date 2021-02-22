@@ -18,6 +18,7 @@ public class XboxEventListener {
 
     public static void register()
     {
+        Minion.addMinions();
         MinecraftForge.EVENT_BUS.register(new XboxEventListener());
     }
 

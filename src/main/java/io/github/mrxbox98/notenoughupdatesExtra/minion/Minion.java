@@ -53,19 +53,68 @@ public class Minion {
 
     }
 
+    public int getResourcePerHour() {
+        return resourcePerHour;
+    }
+
+    public int getResourcePerDay() {
+        return resourcePerDay;
+    }
+
+    public int getProfitPerHour() {
+        return profitPerHour;
+    }
+
+    public int getProfitPerDay() {
+        return profitPerDay;
+    }
+
     public static void addMinions()
     {
+        minions.add(COBBLESTONE_1);
+        minions.add(COBBLESTONE_2);
+        minions.add(COBBLESTONE_3);
+        minions.add(COBBLESTONE_4);
+        minions.add(COBBLESTONE_5);
+        minions.add(COBBLESTONE_6);
+        minions.add(COBBLESTONE_7);
+        minions.add(COBBLESTONE_8);
+        minions.add(COBBLESTONE_9);
+        minions.add(COBBLESTONE_10);
+        minions.add(COBBLESTONE_11);
+    }
 
+    public static Minion findMinion(String name)
+    {
+        for(int i=0;i<minions.size();i++)
+        {
+            if(minions.get(i).name.equals(name))
+            {
+                return minions.get(i);
+            }
+        }
+        return null;
+    }
+
+
+
+    public static int getResourceGenerated(String name)
+    {
+        if(findMinion(name) == null)
+        {
+            return 0;
+        }
+        return findMinion(name).getResourcePerHour();
     }
 
     public static void onGuiBackgroundDraw(GuiScreenEvent.BackgroundDrawnEvent event)
     {
-        if(!(event.gui instanceof GuiContainer))
+        if(!(event.gui instanceof GuiContainer) || currentMinion.length()==0)
         {
             return;
         }
-        //if(currentMinion.length()!=0)
+
         RenderUtils.drawFloatingRect(410,85,100,100);
-        TextRenderUtils.drawStringCentered("Test",mc.fontRendererObj,460,135,true,100);
+        TextRenderUtils.drawStringCentered(new String(String.valueOf(getResourceGenerated(currentMinion))),mc.fontRendererObj,460,135,false,150);
     }
 }

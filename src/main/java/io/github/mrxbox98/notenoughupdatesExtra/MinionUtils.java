@@ -62,9 +62,9 @@ public class MinionUtils {
         //System.out.println(inventory.getSizeInventory());
 
 
-        if(inventory.getStackInSlot(5)!=null)
+        if(inventory.getStackInSlot(4)!=null)
         {
-            String name=inventory.getStackInSlot(5).getDisplayName();
+            String name=inventory.getStackInSlot(4).getDisplayName();
 
             Minion.currentMinion=name;
             return name;
