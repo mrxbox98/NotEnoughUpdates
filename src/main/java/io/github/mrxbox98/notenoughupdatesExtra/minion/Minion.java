@@ -124,7 +124,7 @@ public class Minion {
         }
 
         RenderUtils.drawFloatingRect(410,85,200,100);
-        TextRenderUtils.drawStringCentered("Resources Generated: " + String.valueOf(getResourceGenerated(currentMinion)),mc.fontRendererObj,500,135,false,150);
-        TextRenderUtils.drawStringCentered("Profit Generated: " + String.valueOf(getProfitGenerated(currentMinion)),mc.fontRendererObj,500,145,false,150);
+        TextRenderUtils.drawStringCentered("Resources Generated/H: " + String.valueOf(getResourceGenerated(currentMinion)),mc.fontRendererObj,500,135,false,150);
+        TextRenderUtils.drawStringCentered("Profit Generated/H: " + String.valueOf(getProfitGenerated(currentMinion)),mc.fontRendererObj,500,145,false,150);
     }
 }
